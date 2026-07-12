@@ -1,0 +1,75 @@
+name: Refresh persisted query hashes
+
+# Galaxus rotates its persisted GraphQL operation hashes whenever it ships a new frontend, which
+# breaks every tool at once. This checks daily and opens a PR with fresh hashes when they move.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-capture hashes even if the current ones still work"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # Cheap probe: one tiny request per operation, no browser. A rotated hash is reported by the
+      # shop in-band (HTTP 200 + "persisted operation key is invalid"), so this is a reliable signal.
+      - name: Check whether hashes are still valid
+        id: check
+        run: |
+          if npm run check-hashes; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Chromium
+        if: steps.check.outputs.stale == 'true' || inputs.force
+        run: npx playwright install --with-deps chromium
+
+      # The shop's bot protection rejects headless Chromium, so the capture runs a real headed
+      # browser on a virtual display.
+      - name: Re-capture hashes
+        if: steps.check.outputs.stale == 'true' || inputs.force
+        run: xvfb-run -a npm run refresh-hashes
+
+      - name: Rebuild and verify against the live shop
+        if: steps.check.outputs.stale == 'true' || inputs.force
+        run: |
+          npm run build
+          npm run check-hashes
+          npm run smoke
+
+      - name: Open a pull request
+        if: steps.check.outputs.stale == 'true' || inputs.force
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/refresh-operation-hashes
+          title: "chore: refresh Galaxus persisted query hashes"
+          commit-message: "chore: refresh Galaxus persisted query hashes"
+          body: |
+            Galaxus rotated its persisted GraphQL operation hashes, so the previous ones were being
+            rejected and every tool was failing.
+
+            These hashes were re-captured from the live storefront by `npm run refresh-hashes`.
+            `npm run check-hashes` and `npm run smoke` both passed against the live shop on the new
+            values before this PR was opened.
+          add-paths: src/operations.json

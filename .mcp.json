@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "galaxus": {
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "env": {
+        "GALAXUS_PORTAL": "galaxus",
+        "GALAXUS_LANGUAGE": "en"
+      }
+    }
+  }
+}
