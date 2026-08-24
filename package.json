@@ -15,7 +15,8 @@
     "start": "node dist/index.js",
     "smoke": "node scripts/smoke.mjs",
     "refresh-hashes": "node scripts/refresh-hashes.mjs",
-    "check-hashes": "node scripts/check-hashes.mjs"
+    "check-hashes": "node scripts/check-hashes.mjs",
+    "release-hashes": "bash scripts/release-hashes.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

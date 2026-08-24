@@ -47,19 +47,29 @@ jobs:
 
       # The shop's bot protection rejects headless Chromium, so the capture runs a real headed
       # browser on a virtual display.
+      # GitHub-hosted IPs are usually blocked. Reliable path: `npm run release-hashes`
+      # on a home machine with a display.
       - name: Re-capture hashes
+        id: capture
         if: steps.check.outputs.stale == 'true' || inputs.force
+        continue-on-error: true
         run: xvfb-run -a npm run refresh-hashes
 
+      - name: Capture blocked on GitHub-hosted runners
+        if: steps.capture.outcome == 'failure'
+        run: |
+          echo "::error::GitHub-hosted Playwright capture is blocked by the shop. On gigabyte (headed, Distrobox Arch): npm run release-hashes"
+          exit 1
+
       - name: Rebuild and verify against the live shop
-        if: steps.check.outputs.stale == 'true' || inputs.force
+        if: steps.capture.outcome == 'success'
         run: |
           npm run build
           npm run check-hashes
           npm run smoke
 
       - name: Open a pull request
-        if: steps.check.outputs.stale == 'true' || inputs.force
+        if: steps.capture.outcome == 'success'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: chore/refresh-operation-hashes

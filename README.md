@@ -133,17 +133,20 @@ see, rather than writing a broken one.
 It runs **headed on purpose** — headless Chromium gets blocked. Expect a browser window for about a
 minute; don't close it. Commit the resulting `src/operations.json` diff.
 
-**Automatically.** `.github/workflows/refresh-hashes.yml` runs `check-hashes` daily. That step needs
-no browser, so the usual run is cheap and silent. Only when a hash has actually rotated does it
-install Chromium, re-capture the hashes with a headed browser on a virtual display
-(`xvfb-run`, since headless is blocked), re-verify with `check-hashes` and `smoke`, and open a PR
-with the new `src/operations.json`. You can also trigger it by hand from the Actions tab, with
-`force` to re-capture even while the current hashes still work.
+**One command (home machine with a display).** GitHub-hosted runners are blocked by the shop; this
+is the path that actually updates hashes:
 
-One caveat: the workflow talks to Galaxus from a GitHub-hosted runner, and the shop's bot protection
-judges by IP as well as by browser. If those datacenter IPs turn out to be blocked, the capture step
-will fail there — run `npm run refresh-hashes` locally instead (or point the workflow at a
-self-hosted runner). Nothing else about the server depends on this: it is a maintenance path only.
+```bash
+npm run release-hashes
+```
+
+That recaptures headed, `check-hashes`s, commits `src/operations.json`, pushes `main`, and if `asus`
+is reachable runs `homelab-config/scripts/galaxus-mcp-sync-ref.sh --apply` (pin PR + container rebuild).
+`SKIP_HOMELAB=1` skips the pin/rebuild. Arch/Distrobox needs Chromium libs once (`nspr`, `nss`, GTK, …).
+
+**Automatically.** `.github/workflows/refresh-hashes.yml` runs `check-hashes` daily (no browser).
+Capture on `ubuntu-latest` usually fails (datacenter IP). Triggering it from the Actions tab is a
+staleness check, not a substitute for `npm run release-hashes`.
 
 ## Two behaviours worth knowing
 
