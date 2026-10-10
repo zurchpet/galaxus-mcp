@@ -296,28 +296,23 @@ export function buildTools(client: GalaxusClient) {
       name: "galaxus_related_products",
       title: "Find related products",
       description:
-        "Products related to a given one: `similar` for alternatives to compare against, `bought_together` for " +
-        "complements, `accessories` for add-ons.",
+        "Products related to a given one: `similar` for alternatives to compare against, `accessories` for add-ons.",
       schema: {
         product: z.string().describe("Numeric product id or Galaxus product URL."),
-        kind: z.enum(["similar", "bought_together", "accessories"]).default("similar").describe("Which relationship to follow."),
+        kind: z.enum(["similar", "accessories"]).default("similar").describe("Which relationship to follow."),
         limit: z.number().int().min(1).max(30).default(10).describe("How many related products to return."),
       },
       handler: async (args: any) => {
         const id = productIdFromInput(args.product);
         const productId = globalId.product(id);
         const limit = args.limit ?? 10;
-        const kind: "similar" | "bought_together" | "accessories" = args.kind ?? "similar";
+        const kind: "similar" | "accessories" = args.kind ?? "similar";
 
         // Each recommender takes a different variable set; only `similar` is paginated.
         const request = {
           similar: {
             operation: "similarProductsProductDetailPageRecommenderQuery",
             variables: { productId, first: limit, deviceType: "DESKTOP", shouldShowMiniComparison: false, sessionProductIds: [] },
-          },
-          bought_together: {
-            operation: "productsOftenBoughtTogetherProductDetailPageRecommenderQuery",
-            variables: { productId },
           },
           accessories: {
             operation: "accessoriesProductDetailPageRecommenderQuery",

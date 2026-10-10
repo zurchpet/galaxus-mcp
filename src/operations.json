@@ -1,16 +1,15 @@
 {
   "_comment": "Persisted GraphQL operation hashes for the Galaxus/Digitec storefront. These rotate when the shop deploys a new frontend. Regenerate with `npm run refresh-hashes`.",
-  "_capturedAt": "2026-08-24",
-  "_clientVersion": "master-20260824-1740-32746303248-1",
+  "_capturedAt": "2026-10-10",
+  "_clientVersion": "master-20261009-2152-37983142341-1",
   "operations": {
-    "useSearchDataQuery": "5b56da49f8ffeab75f2f7cf1039d169c",
-    "productDetailPageQuery": "766ecb2a0dedfb9b950ddc72e6cb30ce",
-    "productTypeProductListRelayQuery": "9536854cd2d86bf8ec7f2c0eb1c9d6f9",
-    "brandProductListRelayQuery": "73c1f337d45e865d5600f4e5bed8d269",
+    "useSearchDataQuery": "b2f914d371f8ba7ab4a5cc28a6f19062",
+    "productDetailPageQuery": "bfcde353c10f819257b613958ffe1173",
+    "productTypeProductListRelayQuery": "a2ec6ada3f57833bd182c07bee7694cc",
+    "brandProductListRelayQuery": "1f0abc452495a12cc632b8d39a942b3e",
     "useInstantSearchApiQuery": "ae2c58d2f8d8120f3cb82f910f5c0fad",
     "productRatingsModuleInnerQuery": "091ee39ec561acd3ee7eb7aeda633458",
-    "similarProductsProductDetailPageRecommenderQuery": "8fb32d6b5254780664d55db26641a7a2",
-    "productsOftenBoughtTogetherProductDetailPageRecommenderQuery": "9b98124d146b7149de029c947f78afde",
-    "accessoriesProductDetailPageRecommenderQuery": "f4cc3dee3c4b51481db88b8b11e8f08b"
+    "similarProductsProductDetailPageRecommenderQuery": "bbb43fb27930dd8ef4cfd829239caafc",
+    "accessoriesProductDetailPageRecommenderQuery": "8e8818ef8dbaa554750420a07d86a4f5"
   }
 }
