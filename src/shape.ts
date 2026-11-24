@@ -5,22 +5,42 @@ import type { GalaxusClient } from "./client.js";
  * fields an assistant actually reasons about, so tool results stay inside a sane token budget.
  */
 
+/**
+ * The shop's delivery-speed gauge (the icon next to the price). The labels are read off live
+ * delivery estimates on 2026-11-24: TICK = central warehouse, next day; FULL = 2-3 days;
+ * THREE_QUARTER ≈ 1 week; HALF = 1-2 weeks; QUARTER = 2+ weeks; IMMEDIATE = digital download.
+ * The detail tool carries the exact dates in `expected_delivery`.
+ */
 const AVAILABILITY_TEXT: Record<string, string> = {
-  IN_STOCK: "in stock",
-  ONE_DAY: "ships in ~1 day",
-  TWO_DAYS: "ships in ~2 days",
-  THREE_DAYS: "ships in ~3 days",
-  WITHIN7_DAYS: "ships within 7 days",
-  LONGER_THAN_A_WEEK: "ships in over a week",
-  ON_DEMAND: "on demand",
-  NOT_AVAILABLE: "not available",
-  UNKNOWN: "availability unknown",
+  IMMEDIATE: "digital, available immediately",
+  TICK: "in stock",
+  FULL: "ships in a few days",
+  THREE_QUARTER: "ships in about a week",
+  HALF: "ships in 1-2 weeks",
+  QUARTER: "ships in over 2 weeks",
 };
 
 function availabilityText(availability: any): string | null {
-  const classification = availability?.mail?.classification ?? availability?.mailDetail?.classification;
+  const classification =
+    availability?.availabilityClassification ?? availability?.realTimeAvailability?.mail?.classification;
   if (!classification) return null;
   return AVAILABILITY_TEXT[classification] ?? classification.toLowerCase().replace(/_/g, " ");
+}
+
+/** `DeliveryAt` gives one instant, `DeliveredBetween` a window, `Download` none. */
+interface MailDeliveryEstimation {
+  expectedAtCustomer?: { from: string; to: string } | null;
+  expectedDeliveryAt?: string | null;
+}
+
+function expectedDelivery(estimation: MailDeliveryEstimation | null | undefined): { from: string; to: string } | null {
+  if (estimation?.expectedAtCustomer) {
+    return { from: estimation.expectedAtCustomer.from, to: estimation.expectedAtCustomer.to };
+  }
+  if (estimation?.expectedDeliveryAt) {
+    return { from: estimation.expectedDeliveryAt, to: estimation.expectedDeliveryAt };
+  }
+  return null;
 }
 
 export interface ProductSummary {
@@ -135,15 +155,15 @@ function shapePriceHistory(priceHistory: any) {
 export function shapeProductDetail(product: any, client: GalaxusClient) {
   if (!product) return null;
   const summary = shapeProductSummary(product, client)!;
-  const delivery = product.availability?.mailDetail?.expectedDelivery;
+  const mail = product.availability?.realTimeAvailability?.mail;
 
   return {
     ...summary,
     gtin: product.gtin ?? null,
     merchant: product.merchant?.name ?? null,
     marketplace: product.offer?.shopOfferType === "MARKETPLACE",
-    stock_count: product.availability?.mailDetail?.stockDetails?.stockCount ?? null,
-    expected_delivery: delivery ? { from: delivery.from, to: delivery.to } : null,
+    stock_count: mail?.stockStatus?.availableQuantity ?? null,
+    expected_delivery: expectedDelivery(mail?.deliveryEstimation),
     breadcrumbs: (product.productType?.breadcrumbs ?? []).map((b: any) => b?.name).filter(Boolean),
     description: product.description ?? null,
     key_specs: specsToRecord(product.keySpecificationGroup?.specifications),

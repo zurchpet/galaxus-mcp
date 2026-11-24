@@ -27,6 +27,12 @@ export class GalaxusError extends Error {
 /** What the shop says (inside a 200 response) when an operation hash no longer matches its build. */
 export const STALE_HASH_MESSAGE = "The specified persisted operation key is invalid.";
 
+/**
+ * Precursor of a rotation (seen 2026-11-22): the old hash is still registered, but the shop's schema
+ * has already dropped fields its stored document selects, so validation fails before execution.
+ */
+const SCHEMA_DRIFT_RE = /The field `\w+` does not exist on the type `\w+`/;
+
 /** Exposed so the hash checker can probe every operation without knowing its variables. */
 export const OPERATION_NAMES = Object.keys(OPERATIONS);
 
@@ -106,6 +112,12 @@ export class GalaxusClient {
         throw new GalaxusError(
           `The persisted hash for "${operation}" is no longer accepted by the shop.`,
           "Galaxus deployed a new frontend and rotated its query hashes. Run `npm run refresh-hashes` (then `npm run build`) to re-capture them.",
+        );
+      }
+      if (SCHEMA_DRIFT_RE.test(messages)) {
+        throw new GalaxusError(
+          `The persisted operation "${operation}" no longer matches the shop's schema: ${messages}`,
+          "Galaxus changed its GraphQL schema and is about to retire this hash. Run `npm run refresh-hashes` (then `npm run build`) to re-capture the current operations.",
         );
       }
       throw new GalaxusError(`Galaxus API error on ${operation}: ${messages}`);

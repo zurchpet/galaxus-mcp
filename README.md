@@ -111,7 +111,7 @@ operation with empty variables tells you whether its hash is alive: a live one c
 missing variable, a rotated one rejects the key. That is one tiny request per operation:
 
 ```bash
-npm run check-hashes    # exits 0 if all hashes are current, 1 if any rotated
+npm run check-hashes    # exits 0 if all hashes are current, 1 if any rotated, 2 if any unverifiable
 ```
 
 **Fixing.** Re-capture and rebuild:
