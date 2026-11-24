@@ -16,7 +16,15 @@ npm run refresh-hashes
 set -e
 
 npm run build
-npm run check-hashes
+# 2 = nichts rotiert, aber unbelegt (z. B. HTTP 403 vom Bot-Schutz auf diesem Host): nur warnen,
+# die Hashes stammen frisch aus dem Live-Shop. 1 = rotiert: hart abbrechen.
+check_rc=0
+npm run check-hashes || check_rc=$?
+if [[ ${check_rc} -eq 2 ]]; then
+  echo "Warnung: check-hashes konnte nicht alle Hashes belegen (siehe oben), pushe trotzdem." >&2
+elif [[ ${check_rc} -ne 0 ]]; then
+  exit "${check_rc}"
+fi
 
 if git diff --quiet -- src/operations.json; then
   echo "operations.json unverändert — nichts zu pushen."
